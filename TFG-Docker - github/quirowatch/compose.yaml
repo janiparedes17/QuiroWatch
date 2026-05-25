@@ -1,0 +1,93 @@
+name: quirowatch
+
+services:
+
+  mysql-vigia:
+    image: mysql:8.0
+    container_name: quirowatch-mysql-vigia
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Europe/Madrid
+    volumes:
+      - mysql_vigia_data:/var/lib/mysql
+    networks:
+      - stack_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mysql-sensor:
+    image: mysql:8.0
+    container_name: quirowatch-mysql-sensor
+    restart: unless-stopped
+    ports:
+      - "3307:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: sensor_db
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Europe/Madrid
+    volumes:
+      - mysql_sensor_data:/var/lib/mysql
+    networks:
+      - stack_net
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    container_name: quirowatch-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - DB_TYPE=mysqldb
+      - DB_MYSQLDB_HOST=mysql-vigia
+      - DB_MYSQLDB_PORT=3306
+      - DB_MYSQLDB_DATABASE=${MYSQL_DATABASE}
+      - DB_MYSQLDB_USER=${MYSQL_USER}
+      - DB_MYSQLDB_PASSWORD=${MYSQL_PASSWORD}
+      - N8N_PORT=5678
+      - GENERIC_TIMEZONE=Europe/Madrid
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+    networks:
+      - stack_net
+    depends_on:
+      mysql-vigia:
+        condition: service_healthy
+      mysql-sensor:
+        condition: service_healthy
+
+  web:
+    image: nginx:alpine
+    container_name: quirowatch-web
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+    networks:
+      - stack_net
+
+volumes:
+  mysql_vigia_data:
+  mysql_sensor_data:
+  n8n_data:
+
+networks:
+  stack_net:
+    driver: bridge

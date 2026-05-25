@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>QuiroWatch — Interfaz Preventiva</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg:#f0f4f8;--panel:#ffffff;--panel-border:#d0dce8;--panel-glow:#e2ecf5;
+      --accent:#0077ff;--accent2:#0055cc;--green:#00e676;--red:#ff3d3d;--amber:#ffaa00;
+      --text-primary:#0d1f35;--text-secondary:#4a6a8a;--text-dim:#9ab0c4;
+      --mono:'Share Tech Mono',monospace;--ui:'Rajdhani',sans-serif;--body:'Exo 2',sans-serif;
+    }
+    *,*::before,*::after{margin:0;padding:0;box-sizing:border-box;}
+    body{background:var(--bg);color:var(--text-primary);font-family:var(--body);min-height:100vh;display:flex;flex-direction:column;background-image:radial-gradient(ellipse at 20% 0%,rgba(0,119,255,0.05) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(0,198,255,0.04) 0%,transparent 50%);}
+    header{display:flex;align-items:center;justify-content:space-between;padding:16px 28px;background:linear-gradient(180deg,#0d1f35 0%,#132a47 100%);border-bottom:1px solid rgba(0,119,255,0.3);position:relative;flex-wrap:wrap;gap:12px;}
+    header::after{content:'';position:absolute;bottom:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.6;}
+    .brand{display:flex;align-items:center;gap:12px;}
+    .brand-icon{width:42px;height:42px;background:linear-gradient(135deg,#0044aa,#0077ff);border-radius:10px;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 0 16px rgba(0,119,255,0.5);flex-shrink:0;}
+    .brand-icon svg{width:24px;height:24px;}
+    .brand-pulse{position:absolute;inset:-3px;border-radius:12px;border:1px solid rgba(0,198,255,0.4);animation:pulse-ring 2.5s ease-in-out infinite;}
+    @keyframes pulse-ring{0%,100%{opacity:.4;transform:scale(1);}50%{opacity:.8;transform:scale(1.06);}}
+    .brand-text{display:flex;flex-direction:column;}
+    .brand-name{font-family:var(--ui);font-size:22px;font-weight:700;letter-spacing:2px;color:#ffffff;line-height:1;}
+    .brand-name span{color:var(--accent);}
+    .brand-sub{font-family:var(--mono);font-size:9px;color:rgba(255,255,255,0.5);letter-spacing:3px;text-transform:uppercase;margin-top:2px;}
+    .header-center{text-align:center;flex:1;}
+    .header-title{font-family:var(--ui);font-size:20px;font-weight:700;letter-spacing:4px;color:#ffffff;text-transform:uppercase;}
+    .header-subtitle{font-size:12px;font-weight:300;color:rgba(255,255,255,0.55);letter-spacing:2px;margin-top:2px;}
+    .header-time{text-align:right;}
+    #clock{font-family:var(--mono);font-size:32px;color:var(--accent);letter-spacing:3px;line-height:1;text-shadow:0 0 20px rgba(0,198,255,0.4);}
+    #date{font-family:var(--mono);font-size:12px;color:rgba(255,255,255,0.45);letter-spacing:2px;margin-top:4px;}
+    .main{flex:1;padding:24px 28px;display:flex;flex-direction:column;gap:20px;}
+    .metrics-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+    @media(max-width:700px){.metrics-grid{grid-template-columns:1fr;}}
+    .metric-card{background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;padding:20px 20px 16px;position:relative;overflow:hidden;animation:card-in .5s ease backwards;}
+    .metric-card:nth-child(1){animation-delay:.05s;}
+    .metric-card:nth-child(2){animation-delay:.10s;}
+    .metric-card:nth-child(3){animation-delay:.15s;}
+    @keyframes card-in{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    .metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent2),transparent);opacity:0.5;}
+    .card-corner{position:absolute;top:6px;right:8px;width:16px;height:16px;opacity:.15;}
+    .card-corner::before,.card-corner::after{content:'';position:absolute;background:var(--accent);}
+    .card-corner::before{top:0;right:0;width:1px;height:8px;}
+    .card-corner::after{top:0;right:0;width:8px;height:1px;}
+    .metric-header{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .metric-icon{width:32px;height:32px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .metric-icon.temp{background:rgba(0,230,118,.1);}
+    .metric-icon.hum{background:rgba(0,119,255,.1);}
+    .metric-icon.press{background:rgba(255,170,0,.1);}
+    .metric-icon svg{width:18px;height:18px;}
+    .metric-label{font-family:var(--ui);font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-secondary);}
+    .metric-body{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+    .metric-left{flex:1;}
+    .metric-value-row{display:flex;align-items:baseline;gap:5px;margin-bottom:8px;}
+    .metric-value{font-family:var(--ui);font-size:4.5rem;font-weight:800;line-height:1;transition:color .3s;}
+    .metric-value.temp-ok{color:var(--green);}
+    .metric-value.hum-ok{color:var(--accent);}
+    .metric-value.press-ok{color:var(--amber);}
+    .metric-value.out-range{color:var(--red);}
+    .metric-unit{font-family:var(--mono);font-size:.95rem;color:var(--text-secondary);}
+    .range-label{font-size:9px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text-dim);margin-bottom:3px;}
+    .range-values{font-family:var(--mono);font-size:11px;color:var(--text-secondary);margin-bottom:6px;}
+    .bar-track{height:6px;background:var(--panel-glow);border-radius:99px;position:relative;margin-bottom:6px;border:1px solid var(--panel-border);}
+    .bar-fill{position:absolute;left:0;top:0;bottom:0;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1);}
+    .bar-fill.temp-ok{background:linear-gradient(90deg,#00a852,#00e676);}
+    .bar-fill.hum-ok{background:linear-gradient(90deg,#0055cc,#0077ff);}
+    .bar-fill.press-ok{background:linear-gradient(90deg,#e65100,#ffaa00);}
+    .bar-fill.out-range{background:linear-gradient(90deg,#991b1b,#ff3d3d);}
+    .bar-marker{position:absolute;top:-5px;width:2px;height:15px;background:var(--text-secondary);border-radius:1px;opacity:.5;}
+    .bar-extremes{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--text-dim);margin-bottom:12px;}
+    
+    .metric-right{display:flex;flex-direction:column;align-items:flex-end;padding-top:4px;}
+    .badge{display:inline-flex;align-items:center;gap:5px;font-family:var(--ui);font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;border-radius:4px;white-space:nowrap;}
+    .badge.ok{background:rgba(0,230,118,.1);color:var(--green);border:1px solid rgba(0,230,118,.3);}
+    .badge.error{background:rgba(255,61,61,.1);color:var(--red);border:1px solid rgba(255,61,61,.3);}
+    .section-panel{background:var(--panel);border:1px solid var(--panel-border);border-radius:10px;overflow:hidden;animation:card-in .5s ease .2s backwards;}
+    .section-header{display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--panel-border);background:linear-gradient(180deg,#ffffff 0%,#f8fafc 100%);flex-wrap:wrap;gap:10px;}
+    .section-title{font-family:var(--ui);font-size:13px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--text-primary);display:flex;align-items:center;gap:8px;}
+    .section-subtitle{font-family:var(--mono);font-size:10px;color:var(--text-dim);letter-spacing:1px;}
+    .tabs{display:flex;gap:6px;}
+    .tab-btn{font-family:var(--ui);font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:6px 14px;border-radius:5px;border:1px solid var(--panel-border);background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .2s;}
+    .tab-btn:hover{border-color:var(--accent);color:var(--accent);}
+    .tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 10px rgba(0,119,255,.3);}
+    .chart-wrap{padding:20px 20px 16px;position:relative;}
+    .chart-area{position:relative;height:180px;}
+    canvas#historicChart{width:100%!important;height:100%!important;}
+    .chart-legend{display:flex;align-items:center;gap:20px;margin-top:10px;flex-wrap:wrap;}
+    .legend-item{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:10px;color:var(--text-secondary);}
+    .legend-line{width:24px;height:2px;border-radius:1px;}
+    .legend-line.solid{background:var(--accent);}
+    .legend-line.sensor{background:#ff6b35;}
+    .legend-line.dashed{background:repeating-linear-gradient(90deg,#ff8c00 0,#ff8c00 4px,transparent 4px,transparent 8px);}
+    .legend-dot{width:10px;height:2px;border-top:2px dashed var(--text-dim);}
+    .changes-table-wrap{overflow-x:auto;}
+    table{width:100%;border-collapse:collapse;}
+    thead tr{background:linear-gradient(180deg,#f0f4f8 0%,#e8eef5 100%);}
+    th{font-family:var(--ui);font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--text-secondary);padding:10px 16px;text-align:left;border-bottom:1px solid var(--panel-border);white-space:nowrap;}
+    tbody tr{border-bottom:1px solid var(--panel-glow);transition:background .15s;}
+    tbody tr:hover{background:rgba(0,119,255,.03);}
+    tbody tr:last-child{border-bottom:none;}
+    td{font-family:var(--body);font-size:12px;color:var(--text-primary);padding:10px 16px;vertical-align:middle;}
+    .td-mono{font-family:var(--mono);font-size:11px;color:var(--text-secondary);white-space:nowrap;}
+    .td-val{font-family:var(--mono);font-size:12px;color:var(--text-primary);}
+    .td-val.alert{color:var(--red);font-weight:700;}
+    .empty-row td{text-align:center;padding:28px;font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:1px;}
+    footer{display:flex;align-items:center;justify-content:space-between;padding:10px 28px;background:var(--panel);border-top:1px solid var(--panel-border);position:relative;flex-wrap:wrap;gap:10px;}
+    footer::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.3;}
+    .footer-item{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--text-secondary);letter-spacing:1px;}
+    .footer-icon{color:var(--accent);opacity:.7;}
+    .footer-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);animation:dot-blink 2s ease-in-out infinite;}
+    @keyframes dot-blink{0%,100%{opacity:1;}50%{opacity:.3;}}
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="brand-icon">
+      <div class="brand-pulse"></div>
+      <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+      </svg>
+    </div>
+    <div class="brand-text">
+      <div class="brand-name">Quiro<span>Watch</span></div>
+      <div class="brand-sub">Monitorización ambiental</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <div class="header-title" id="roomTitle">INTERFAZ PREVENTIVA — QUIRÓFANO --</div>
+    <div class="header-subtitle" id="hospitalName">Hospital Universitario San Juan de Alicante</div>
+  </div>
+  <div class="header-time">
+    <div id="clock">--:--:--</div>
+    <div id="date">--/--/----</div>
+  </div>
+</header>
+
+<div class="main">
+
+  <div class="metrics-grid" id="metricsGrid">
+    <!-- Temperatura -->
+    <div class="metric-card">
+      <div class="card-corner"></div>
+      <div class="metric-header">
+        <div class="metric-icon temp">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#00e676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z"></path>
+          </svg>
+        </div>
+        <span class="metric-label">Temperatura</span>
+      </div>
+      <div class="metric-body">
+        <div class="metric-left">
+          <div class="metric-value-row">
+            <span class="metric-value temp-ok" id="tempVal">--</span>
+            <span class="metric-unit">°C</span>
+          </div>
+          <div class="range-label">Rango aceptable</div>
+          <div class="range-values" id="tempRange">-- °C – -- °C</div>
+          <div class="bar-track">
+            <div class="bar-fill temp-ok" id="tempBar" style="width:0%"></div>
+            <div class="bar-marker" id="tempMarker" style="left:0%"></div>
+          </div>
+          <div class="bar-extremes"><span id="tempMin">18</span><span id="tempMax">24</span></div>
+        </div>
+        <div class="metric-right">
+          <span class="badge ok" id="tempBadge">● Dentro de rango</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Humedad -->
+    <div class="metric-card">
+      <div class="card-corner"></div>
+      <div class="metric-header">
+        <div class="metric-icon hum">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#0077ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+          </svg>
+        </div>
+        <span class="metric-label">Humedad</span>
+      </div>
+      <div class="metric-body">
+        <div class="metric-left">
+          <div class="metric-value-row">
+            <span class="metric-value hum-ok" id="humVal">--</span>
+            <span class="metric-unit">%</span>
+          </div>
+          <div class="range-label">Rango aceptable</div>
+          <div class="range-values" id="humRange">-- % – -- %</div>
+          <div class="bar-track">
+            <div class="bar-fill hum-ok" id="humBar" style="width:0%"></div>
+            <div class="bar-marker" id="humMarker" style="left:0%"></div>
+          </div>
+          <div class="bar-extremes"><span id="humMin">45</span><span id="humMax">65</span></div>
+        </div>
+        <div class="metric-right">
+          <span class="badge ok" id="humBadge">● Dentro de rango</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presión Diferencial — se oculta si no hay datos -->
+    <div class="metric-card" id="pressCard">
+      <div class="card-corner"></div>
+      <div class="metric-header">
+        <div class="metric-icon press">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffaa00" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <span class="metric-label">Presión Diferencial</span>
+      </div>
+      <div class="metric-body">
+        <div class="metric-left">
+          <div class="metric-value-row">
+            <span class="metric-value press-ok" id="pressVal">--</span>
+            <span class="metric-unit">Pa</span>
+          </div>
+          <div class="range-label">Rango aceptable</div>
+          <div class="range-values" id="pressRange">-- Pa – -- Pa</div>
+          <div class="bar-track">
+            <div class="bar-fill press-ok" id="pressBar" style="width:0%"></div>
+            <div class="bar-marker" id="pressMarker" style="left:0%"></div>
+          </div>
+          <div class="bar-extremes"><span id="pressMin">5</span><span id="pressMax">20</span></div>
+        </div>
+        <div class="metric-right">
+          <span class="badge ok" id="pressBadge">● Dentro de rango</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GRÁFICA -->
+  <div class="section-panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+          </svg>
+          Histórico reciente
+        </div>
+        <div class="section-subtitle">Evolución temporal — datos disponibles</div>
+      </div>
+      <div class="tabs" id="tabsContainer">
+        <button class="tab-btn active" data-param="temp" onclick="switchTab('temp')">Temperatura</button>
+        <button class="tab-btn" data-param="hum" onclick="switchTab('hum')">Humedad</button>
+        <button class="tab-btn" data-param="press" onclick="switchTab('press')" id="pressTab">Presión diferencial</button>
+      </div>
+    </div>
+    <div class="chart-wrap">
+      <div class="chart-area">
+        <canvas id="historicChart"></canvas>
+      </div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-line solid"></div> VIGIA</div>
+        <div class="legend-item"><div class="legend-line sensor" style="background:#ff6b35;"></div> Sensor BME280</div>
+        <div class="legend-item"><div class="legend-line dashed"></div> Límite superior</div>
+        <div class="legend-item"><div class="legend-dot"></div> Límite inferior</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLA COMPARATIVA -->
+  <div class="section-panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+          Tabla comparativa VIGIA vs Sensor
+        </div>
+        <div class="section-subtitle">Evolución temporal — datos disponibles</div>
+      </div>
+    </div>
+    <div class="changes-table-wrap">
+      <table id="comparativeTable">
+        <thead id="comparativeHead">
+          <tr>
+            <th>Hora</th>
+            <th>Temp. VIGIA</th>
+            <th>Humedad VIGIA</th>
+            <th>Presión dif.</th>
+            <th>Temp. Sensor</th>
+            <th>Humedad Sensor</th>
+          </tr>
+        </thead>
+        <tbody id="changesBody">
+          <tr class="empty-row"><td colspan="6">Cargando datos...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  <div class="footer-item">
+    <svg class="footer-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"></circle>
+      <polyline points="12 6 12 12 16 14"></polyline>
+    </svg>
+    Último dato recibido: <span id="lastUpdate">--/--/---- --:--:--</span>
+  </div>
+  <div class="footer-item">
+    <svg class="footer-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <polyline points="23 4 23 10 17 10"></polyline>
+      <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+    </svg>
+    Actualización automática cada 30 segundos
+    <div class="footer-dot"></div>
+  </div>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  const N8N_URL = 'http://localhost:5678/webhook/preventiva';
+  const params = new URLSearchParams(window.location.search);
+  const QUIROFANO_ID = parseInt(params.get('id')) || 1;
+
+  const TEMP_MIN = 18, TEMP_MAX = 24;
+  const HUM_MIN = 45, HUM_MAX = 65;
+  const PRESS_MIN = 5, PRESS_MAX = 20;
+
+  function pad(n) { return String(n).padStart(2,'0'); }
+
+  function pct(val, min, max) {
+    return Math.min(100, Math.max(0, ((val - min) / (max - min)) * 100));
+  }
+
+  function statusOf(val, min, max) { return (val < min || val > max) ? 'error' : 'ok'; }
+  const BADGE_TEXT = { ok:'● Dentro de rango', error:'✕ Fuera de rango' };
+
+  function setBadge(id, st) {
+    const el = document.getElementById(id);
+    el.className = 'badge ' + (st==='ok' ? 'ok' : 'error');
+    el.textContent = BADGE_TEXT[st] || BADGE_TEXT.ok;
+  }
+  function setMetricColor(id, baseClass, st) {
+    document.getElementById(id).className = 'metric-value ' + (st==='ok' ? baseClass : 'out-range');
+  }
+
+  function setBar(barId, markerId, colorClass, val, min, max, st) {
+    const p = pct(val, min, max);
+    const bar = document.getElementById(barId);
+    const mrk = document.getElementById(markerId);
+    if (bar) {
+      bar.style.width = p + '%';
+      bar.className = 'bar-fill ' + (st === 'ok' ? colorClass : 'out-range');
+    }
+    if (mrk) mrk.style.left = p + '%';
+  }
+
+  function updateClock() {
+    const now = new Date();
+    document.getElementById('clock').textContent =
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+    document.getElementById('date').textContent =
+      `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()}`;
+  }
+
+  document.getElementById('roomTitle').textContent =
+    `INTERFAZ PREVENTIVA — QUIRÓFANO ${pad(QUIROFANO_ID)}`;
+
+  let vigiaData = [], sensorData = [];
+  let chart = null;
+  let activeParam = 'temp';
+  let hayPresion = false;
+
+  function renderCards(vigia, sensor) {
+    const tempEntries  = vigia.filter(v => v.parametro === 'temperatura');
+    const humEntries   = vigia.filter(v => v.parametro === 'humedad');
+    const pressEntries = vigia.filter(v => v.parametro === 'presion_diferencial');
+
+    const lastTemp  = tempEntries.length  ? parseFloat(tempEntries[tempEntries.length-1].valor)   : null;
+    const lastHum   = humEntries.length   ? parseFloat(humEntries[humEntries.length-1].valor)     : null;
+    const lastPress = pressEntries.length ? parseFloat(pressEntries[pressEntries.length-1].valor) : null;
+
+    hayPresion = lastPress !== null;
+
+    if (lastTemp !== null) {
+      const st = statusOf(lastTemp, TEMP_MIN, TEMP_MAX);
+      setMetricColor('tempVal', 'temp-ok', st);
+      document.getElementById('tempVal').textContent = lastTemp.toFixed(2);
+      document.getElementById('tempRange').textContent = `${TEMP_MIN} °C – ${TEMP_MAX} °C`;
+      setBar('tempBar', 'tempMarker', 'temp-ok', lastTemp, TEMP_MIN, TEMP_MAX, st);
+      setBadge('tempBadge', st);
+    }
+    if (lastHum !== null) {
+      const st = statusOf(lastHum, HUM_MIN, HUM_MAX);
+      setMetricColor('humVal', 'hum-ok', st);
+      document.getElementById('humVal').textContent = lastHum.toFixed(2);
+      document.getElementById('humRange').textContent = `${HUM_MIN} % – ${HUM_MAX} %`;
+      setBar('humBar', 'humMarker', 'hum-ok', lastHum, HUM_MIN, HUM_MAX, st);
+      setBadge('humBadge', st);
+    }
+
+    // Mostrar u ocultar tarjeta y pestaña de presión
+    const pressCard = document.getElementById('pressCard');
+    const pressTab  = document.getElementById('pressTab');
+    if (hayPresion) {
+      pressCard.style.display = 'block';
+      pressTab.style.display  = 'inline-flex';
+      const st = statusOf(lastPress, PRESS_MIN, PRESS_MAX);
+      const sign = lastPress >= 0 ? '+' : '';
+      setMetricColor('pressVal', 'press-ok', st);
+      document.getElementById('pressVal').textContent = sign + lastPress.toFixed(2);
+      document.getElementById('pressRange').textContent = `${PRESS_MIN} Pa – ${PRESS_MAX} Pa`;
+      setBar('pressBar', 'pressMarker', 'press-ok', lastPress, PRESS_MIN, PRESS_MAX, st);
+      setBadge('pressBadge', st);
+    } else {
+      pressCard.style.display = 'none';
+      pressTab.style.display  = 'none';
+      if (activeParam === 'press') {
+        activeParam = 'temp';
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.param === 'temp'));
+      }
+    }
+
+    const now = new Date();
+    document.getElementById('lastUpdate').textContent =
+      `${pad(now.getDate())}/${pad(now.getMonth()+1)}/${now.getFullYear()} ` +
+      `${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}`;
+  }
+
+  function renderComparativeTable(vigia, sensor) {
+    const tbody = document.getElementById('changesBody');
+    const thead = document.getElementById('comparativeHead');
+    const timestamps = [...new Set(vigia.map(v => v.timestamp))].slice(-20);
+
+    if (timestamps.length === 0) {
+      tbody.innerHTML = `<tr class="empty-row"><td colspan="${hayPresion ? 6 : 5}">Sin datos disponibles</td></tr>`;
+      return;
+    }
+
+    // Cabecera dinámica según si hay presión
+    thead.innerHTML = `<tr>
+      <th>Hora</th>
+      <th>Temp. VIGIA</th>
+      <th>Humedad VIGIA</th>
+      ${hayPresion ? '<th>Presión dif.</th>' : ''}
+      <th>Temp. Sensor</th>
+      <th>Humedad Sensor</th>
+    </tr>`;
+
+    const rows = timestamps.map(ts => {
+      const entries = vigia.filter(v => v.timestamp === ts);
+      const temp = entries.find(e => e.parametro === 'temperatura');
+      const hum  = entries.find(e => e.parametro === 'humedad');
+      const pres = entries.find(e => e.parametro === 'presion_diferencial');
+
+      const tsDate = new Date(ts).getTime();
+      let closestSensor = null, minDiff = Infinity;
+      sensor.forEach(s => {
+        const diff = Math.abs(new Date(s.timestamp).getTime() - tsDate);
+        if (diff < minDiff) { minDiff = diff; closestSensor = s; }
+      });
+
+      const hora  = ts.split(' ')[1]?.substring(0,5) || ts;
+      const tempV = temp ? parseFloat(temp.valor).toFixed(2) : '--';
+      const humV  = hum  ? parseFloat(hum.valor).toFixed(2)  : '--';
+      const presV = pres ? parseFloat(pres.valor).toFixed(2) : '--';
+      const tempS = closestSensor ? parseFloat(closestSensor.temperatura).toFixed(2) : '--';
+      const humS  = closestSensor ? parseFloat(closestSensor.humedad).toFixed(2)     : '--';
+
+      const tempOkV = temp ? (parseFloat(temp.valor) >= TEMP_MIN && parseFloat(temp.valor) <= TEMP_MAX) : true;
+      const humOkV  = hum  ? (parseFloat(hum.valor)  >= HUM_MIN  && parseFloat(hum.valor)  <= HUM_MAX)  : true;
+      const tempOkS = closestSensor ? (parseFloat(closestSensor.temperatura) >= TEMP_MIN && parseFloat(closestSensor.temperatura) <= TEMP_MAX) : true;
+      const humOkS  = closestSensor ? (parseFloat(closestSensor.humedad)     >= HUM_MIN  && parseFloat(closestSensor.humedad)     <= HUM_MAX)  : true;
+
+      return `<tr>
+        <td class="td-mono">${hora}</td>
+        <td class="td-val${!tempOkV?' alert':''}">${tempV} °C</td>
+        <td class="td-val${!humOkV?' alert':''}">${humV} %</td>
+        ${hayPresion ? `<td class="td-val">${presV} Pa</td>` : ''}
+        <td class="td-val${!tempOkS?' alert':''}">${tempS} °C</td>
+        <td class="td-val${!humOkS?' alert':''}">${humS} %</td>
+      </tr>`;
+    });
+
+    tbody.innerHTML = rows.join('');
+  }
+
+  function buildChart(vigia, sensor, param) {
+    const ctx = document.getElementById('historicChart').getContext('2d');
+    if (chart) chart.destroy();
+
+    let vigiaFiltered, sensorFiltered, color, minL, maxL, unit, yMin, yMax;
+
+    if (param === 'temp') {
+      vigiaFiltered  = vigia.filter(v => v.parametro === 'temperatura').map(v => ({ x:v.timestamp, y:parseFloat(v.valor) }));
+      sensorFiltered = sensor.map(s => ({ x:s.timestamp, y:parseFloat(s.temperatura) }));
+      color='#00e676'; minL=TEMP_MIN; maxL=TEMP_MAX; unit='°C'; yMin=15; yMax=28;
+    } else if (param === 'hum') {
+      vigiaFiltered  = vigia.filter(v => v.parametro === 'humedad').map(v => ({ x:v.timestamp, y:parseFloat(v.valor) }));
+      sensorFiltered = sensor.map(s => ({ x:s.timestamp, y:parseFloat(s.humedad) }));
+      color='#0077ff'; minL=HUM_MIN; maxL=HUM_MAX; unit='%'; yMin=20; yMax=80;
+    } else {
+      vigiaFiltered  = vigia.filter(v => v.parametro === 'presion_diferencial').map(v => ({ x:v.timestamp, y:parseFloat(v.valor) }));
+      sensorFiltered = [];
+      color='#ffaa00'; minL=PRESS_MIN; maxL=PRESS_MAX; unit='Pa'; yMin=-30; yMax=30;
+    }
+
+    const labels    = vigiaFiltered.map(v => v.x.split(' ')[1]?.substring(0,5) || v.x);
+    const vigiaVals = vigiaFiltered.map(v => v.y);
+    const sensorVals = param !== 'press' ? sensorFiltered.slice(0, vigiaFiltered.length).map(s => s.y) : [];
+    const limitMax  = new Array(vigiaVals.length).fill(maxL);
+    const limitMin  = new Array(vigiaVals.length).fill(minL);
+
+    const datasets = [
+      { label:'VIGIA', data:vigiaVals, borderColor:color, backgroundColor:color+'18', borderWidth:2, pointRadius:0, fill:true, tension:0.35 },
+      { label:`Límite superior`, data:limitMax, borderColor:'#ff8c00', borderWidth:1.5, borderDash:[6,4], pointRadius:0, fill:false },
+      { label:`Límite inferior`, data:limitMin, borderColor:'#9ab0c4', borderWidth:1.5, borderDash:[3,4], pointRadius:0, fill:false },
+    ];
+
+    if (sensorVals.length > 0) {
+      datasets.splice(1, 0, {
+        label:'Sensor BME280', data:sensorVals, borderColor:'#ff6b35', backgroundColor:'#ff6b3518',
+        borderWidth:2, pointRadius:0, fill:false, tension:0.35, borderDash:[4,2]
+      });
+    }
+
+    chart = new Chart(ctx, {
+      type:'line',
+      data:{ labels, datasets },
+      options:{
+        responsive:true, maintainAspectRatio:false, animation:{ duration:400 },
+        interaction:{ mode:'index', intersect:false },
+        plugins:{ legend:{ display:false }, tooltip:{ backgroundColor:'#0d1f35', titleColor:'#9ab0c4', bodyColor:'#ffffff', borderColor:'#0077ff', borderWidth:1 } },
+        scales:{
+          x:{ grid:{ color:'#d0dce820' }, ticks:{ font:{ family:"'Share Tech Mono'", size:10 }, color:'#9ab0c4', maxTicksLimit:12 } },
+          y:{ min:yMin, max:yMax, grid:{ color:'#d0dce840' }, ticks:{ font:{ family:"'Share Tech Mono'", size:10 }, color:'#9ab0c4', callback:v=>`${v} ${unit}` } }
+        }
+      }
+    });
+  }
+
+  function switchTab(param) {
+    activeParam = param;
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.param === param));
+    buildChart(vigiaData, sensorData, param);
+  }
+
+  async function fetchData() {
+    try {
+      const res = await fetch(`${N8N_URL}?id=${QUIROFANO_ID}`);
+      const data = await res.json();
+      vigiaData  = data.vigia  || [];
+      sensorData = data.sensor || [];
+      renderCards(vigiaData, sensorData);
+      renderComparativeTable(vigiaData, sensorData);
+      buildChart(vigiaData, sensorData, activeParam);
+    } catch(e) {
+      console.error('Error al obtener datos:', e);
+    }
+  }
+
+  updateClock();
+  setInterval(updateClock, 1000);
+  fetchData();
+  setInterval(fetchData, 30000);
+</script>
+</body>
+</html>
